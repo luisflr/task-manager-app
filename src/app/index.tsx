@@ -1,7 +1,14 @@
 // app/index.tsx
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { FlatList, StatusBar, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 // Componentes
 import { Header } from "@/components/layout/Header";
@@ -9,38 +16,39 @@ import { TaskCard } from "@/components/task/TaskCard";
 import { CategoryFilter } from "@/components/task/TaskCategoriesFilters";
 import { FloatingButton } from "@/components/ui/FloatingButton";
 
-// Tipos y Datos Mock
-import { MOCK_TASKS } from "@/data/mockTasks";
+// Hooks & Stores
+import { useTasksQuery } from "@/hooks/useTaskQuery";
+import { useUIStore } from "@/store/useUIStore";
 import { colors } from "@/theme/colors";
-import { FilterCategory, Task } from "@/types/task";
+import { Task } from "@/types/task";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const router = useRouter();
 
-  // Estado local para manipular las tareas antes de integrar Zustand
-  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
-  const [selectedCategory, setSelectedCategory] =
-    useState<FilterCategory>("Todas");
+  // 1. Estado del Servidor vía TanStack Query
+  const { tasks, isLoading, isError, refetch, toggleTask } = useTasksQuery();
 
-  // Alternar el estado completado de una tarea
-  const handleToggleComplete = (id: string) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((t) =>
-        t.id === id ? { ...t, isCompleted: !t.isCompleted } : t
-      )
-    );
-  };
+  // 2. Estado de la UI vía Zustand
+  const { selectedCategory, setSelectedCategory } = useUIStore();
 
-  // Filtrado reactivo según la categoría seleccionada
-  const filteredTasks = tasks.filter((task) => {
+  // Filtrado de la lista en memoria
+  const filteredTasks = tasks.filter((task: Task) => {
     if (selectedCategory === "Todas") return true;
     return task.category === selectedCategory;
   });
 
-  // Cálculo de estadísticas para el Header
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((t) => t.isCompleted).length;
+  const completedTasks = tasks.filter((t: Task) => t.isCompleted).length;
+
+  if (isLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Cargando tareas desde la API...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider style={styles.container}>
@@ -51,7 +59,13 @@ export default function HomeScreen() {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
-        // Componentes del encabezado de la lista
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={refetch}
+            colors={[colors.primary]}
+          />
+        }
         ListHeaderComponent={
           <View>
             <Header totalTasks={totalTasks} completedTasks={completedTasks} />
@@ -67,57 +81,45 @@ export default function HomeScreen() {
             </Text>
           </View>
         }
-        // Renderizado de cada item
         renderItem={({ item }) => (
           <TaskCard
             task={item}
-            onToggleComplete={handleToggleComplete}
+            onToggleComplete={(id) => toggleTask(id, !item.isCompleted)}
             onPress={() =>
               router.push({
-                pathname: "/task/[id]",
+                pathname: "/task/[id]" as any,
                 params: { id: item.id },
               })
             }
           />
         )}
-        // Estado vacío si el filtro no devuelve resultados
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              No hay tareas en esta categoría 🎯
+              {isError
+                ? "Error al cargar datos."
+                : "No hay tareas en esta categoría 🎯"}
             </Text>
           </View>
         }
       />
 
-      {/* Botón Flotante para Crear Tarea */}
-      <FloatingButton
-        onPress={() => {
-          // Aquí abriremos el modal de creación de tareas
-          console.log("Abrir modal de creación");
-        }}
-      />
+      <FloatingButton onPress={() => console.log("Abrir Modal Tarea")} />
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  listContent: {
-    paddingBottom: 100, // Espacio para que el FAB no tape la última tarjeta
-  },
-  filterSection: {
-    marginTop: 16,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingText: { marginTop: 12, color: colors.mediumBlue, fontSize: 14 },
+  listContent: { paddingBottom: 100 },
+  filterSection: { marginTop: 16 },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: colors.darkBlue,
     paddingHorizontal: 20,
-    marginBottom: 4,
   },
   sectionTitleList: {
     fontSize: 16,
@@ -127,12 +129,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
   },
-  emptyContainer: {
-    padding: 32,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: colors.softBlue,
-    fontSize: 14,
-  },
+  emptyContainer: { padding: 32, alignItems: "center" },
+  emptyText: { color: colors.softBlue, fontSize: 14 },
 });
