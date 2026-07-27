@@ -1,98 +1,144 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// app/index.tsx
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  FlatList,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+// Componentes
+import { Header } from "@/components/layout/Header";
+import { TaskCard } from "@/components/task/TaskCard";
+import { CategoryFilter } from "@/components/task/TaskCategoriesFilters";
+import { FloatingButton } from "@/components/ui/FloatingButton";
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+// Tipos y Datos Mock
+import { MOCK_TASKS } from "@/data/mockTasks";
+import { colors } from "@/theme/colors";
+import { FilterCategory, Task } from "@/types/task";
 
 export default function HomeScreen() {
+  const router = useRouter();
+
+  // Estado local para manipular las tareas antes de integrar Zustand
+  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+  const [selectedCategory, setSelectedCategory] =
+    useState<FilterCategory>("Todas");
+
+  // Alternar el estado completado de una tarea
+  const handleToggleComplete = (id: string) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((t) =>
+        t.id === id ? { ...t, isCompleted: !t.isCompleted } : t
+      )
+    );
+  };
+
+  // Filtrado reactivo según la categoría seleccionada
+  const filteredTasks = tasks.filter((task) => {
+    if (selectedCategory === "Todas") return true;
+    return task.category === selectedCategory;
+  });
+
+  // Cálculo de estadísticas para el Header
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((t) => t.isCompleted).length;
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.darkBlue} />
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+      <FlatList
+        data={filteredTasks}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        // Componentes del encabezado de la lista
+        ListHeaderComponent={
+          <View>
+            <Header totalTasks={totalTasks} completedTasks={completedTasks} />
+            <View style={styles.filterSection}>
+              <Text style={styles.sectionTitle}>Categorías</Text>
+              <CategoryFilter
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+              />
+            </View>
+            <Text style={styles.sectionTitleList}>
+              Tareas ({filteredTasks.length})
+            </Text>
+          </View>
+        }
+        // Renderizado de cada item
+        renderItem={({ item }) => (
+          <TaskCard
+            task={item}
+            onToggleComplete={handleToggleComplete}
+            onPress={() =>
+              router.push({
+                pathname: "/task/[id]",
+                params: { id: item.id },
+              })
+            }
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        )}
+        // Estado vacío si el filtro no devuelve resultados
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              No hay tareas en esta categoría 🎯
+            </Text>
+          </View>
+        }
+      />
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      {/* Botón Flotante para Crear Tarea */}
+      <FloatingButton
+        onPress={() => {
+          // Aquí abriremos el modal de creación de tareas
+          console.log("Abrir modal de creación");
+        }}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    backgroundColor: colors.background,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  listContent: {
+    paddingBottom: 100, // Espacio para que el FAB no tape la última tarjeta
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  filterSection: {
+    marginTop: 16,
   },
-  title: {
-    textAlign: 'center',
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.darkBlue,
+    paddingHorizontal: 20,
+    marginBottom: 4,
   },
-  code: {
-    textTransform: 'uppercase',
+  sectionTitleList: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.darkBlue,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 8,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  emptyContainer: {
+    padding: 32,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: colors.softBlue,
+    fontSize: 14,
   },
 });

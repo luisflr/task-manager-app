@@ -1,18 +1,20 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { colors } from "@/theme/colors";
+import { Stack } from "expo-router";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
-
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.darkBlue },
+        headerTintColor: "#FFFFFF",
+        headerTitleStyle: { fontWeight: "bold" },
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
+      {/* Ocultamos el header nativo en la Home porque usaremos nuestro Header custom */}
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      {/* Detalle de tarea */}
+      <Stack.Screen name="task/[id]" options={{ headerShown: false }} />
+    </Stack>
   );
 }
