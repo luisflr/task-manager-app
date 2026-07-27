@@ -16,5 +16,5 @@ export const colors = {
   surface: "#FFFFFF", // Fondo de las tarjetas (cards)
   text: "#1E293B", // Texto general
 
-  lightText: "#FFFFFF",
+  whiteBackground: "#FFFFFF",
 };

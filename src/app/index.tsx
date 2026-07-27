@@ -1,14 +1,7 @@
 // app/index.tsx
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  FlatList,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, StatusBar, StyleSheet, Text, View } from "react-native";
 
 // Componentes
 import { Header } from "@/components/layout/Header";
@@ -20,6 +13,7 @@ import { FloatingButton } from "@/components/ui/FloatingButton";
 import { MOCK_TASKS } from "@/data/mockTasks";
 import { colors } from "@/theme/colors";
 import { FilterCategory, Task } from "@/types/task";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -49,7 +43,7 @@ export default function HomeScreen() {
   const completedTasks = tasks.filter((t) => t.isCompleted).length;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.darkBlue} />
 
       <FlatList
@@ -103,7 +97,7 @@ export default function HomeScreen() {
           console.log("Abrir modal de creación");
         }}
       />
-    </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

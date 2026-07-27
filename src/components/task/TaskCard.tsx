@@ -12,7 +12,11 @@ interface TaskCardProps {
   onPress: () => void;
 }
 
-export const TaskCard = ({ task, onToggleComplete }: TaskCardProps) => {
+export const TaskCard = ({
+  task,
+  onToggleComplete,
+  onPress,
+}: TaskCardProps) => {
   // Configuración de colores según la prioridad
   const priorityColor = {
     high: colors.primary,
@@ -21,7 +25,10 @@ export const TaskCard = ({ task, onToggleComplete }: TaskCardProps) => {
   }[task.priority];
 
   return (
-    <View style={[styles.card, task.isCompleted && styles.completedCard]}>
+    <Pressable
+      style={[styles.card, task.isCompleted && styles.completedCard]}
+      onPress={onPress}
+    >
       {/* Checkbox táctil */}
       <Pressable
         style={[styles.checkbox, task.isCompleted && styles.checkedBox]}
@@ -39,7 +46,9 @@ export const TaskCard = ({ task, onToggleComplete }: TaskCardProps) => {
           </View>
 
           {/* Fecha formateada */}
-          <Text style={styles.dateText}>{formatDate(task.dueDate)}</Text>
+          <Text style={styles.dateText}>
+            Vence en {formatDate(task.dueDate)}
+          </Text>
         </View>
 
         {/* Título de la tarea */}
@@ -49,7 +58,7 @@ export const TaskCard = ({ task, onToggleComplete }: TaskCardProps) => {
 
         {/* Descripción (si existe) */}
         {task.description ? (
-          <Text style={styles.description} numberOfLines={2}>
+          <Text style={styles.description} numberOfLines={3}>
             {task.description}
           </Text>
         ) : null}
@@ -66,6 +75,6 @@ export const TaskCard = ({ task, onToggleComplete }: TaskCardProps) => {
       <View
         style={[styles.priorityIndicator, { backgroundColor: priorityColor }]}
       />
-    </View>
+    </Pressable>
   );
 };

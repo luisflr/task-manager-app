@@ -33,7 +33,9 @@ export const MOCK_TASKS: Task[] = [
   },
   {
     id: "4",
-    title: "Configurar la arquitectura de la aplicaciónx",
+    title: "Configurar la arquitectura de la aplicación",
+    description:
+      "Adaptar los archivos de configuración tsconfig, instalar los paquetes necesarios y crear las rutas del proyecto",
     isCompleted: false,
     priority: "medium",
     category: "Dev",
