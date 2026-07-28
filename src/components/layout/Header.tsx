@@ -12,7 +12,7 @@ export const Header = ({ totalTasks, completedTasks }: HeaderProps) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.greeting}>Hola, Dev 👋</Text>
+      <Text style={styles.greeting}>Hola, De nuevo</Text>
       <Text style={styles.subtitle}>Aquí está el resumen de tus tareas</Text>
 
       {/* Card de Progreso */}
